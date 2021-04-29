@@ -128,7 +128,7 @@ class ReceiveSharingIntentPlugin : FlutterPlugin, ActivityAware, MethodCallHandl
                 latestText = value
                 eventSinkText?.success(latestText)
             }
-            intent.action == Intent.ACTION_VIEW -> { // Opening URL
+            intent.action == Intent.ACTION_VIEW -> { // Opening URL & Open file
                 if(intent.type?.startsWith("text") != true){
                     val value = getMediaUris(intent)
                     if (initial) initialMedia = value
