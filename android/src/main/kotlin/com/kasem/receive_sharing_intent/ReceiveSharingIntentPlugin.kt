@@ -111,37 +111,10 @@ class ReceiveSharingIntentPlugin : FlutterPlugin, ActivityAware, MethodCallHandl
     }
 
     private fun handleIntent(intent: Intent, initial: Boolean) {
-        when {
-            (intent.type?.startsWith("text") != true)
-                    && (intent.action == Intent.ACTION_SEND
-                    || intent.action == Intent.ACTION_SEND_MULTIPLE) -> { // Sharing images or videos
-
-                val value = getMediaUris(intent)
-                if (initial) initialMedia = value
-                latestMedia = value
-                eventSinkMedia?.success(latestMedia?.toString())
-            }
-            (intent.type == null || intent.type?.startsWith("text") == true)
-                    && intent.action == Intent.ACTION_SEND -> { // Sharing text
-                val value = intent.getStringExtra(Intent.EXTRA_TEXT)
-                if (initial) initialText = value
-                latestText = value
-                eventSinkText?.success(latestText)
-            }
-            intent.action == Intent.ACTION_VIEW -> { // Opening URL & Open file
-                if(intent.type?.startsWith("text") != true){
-                    val value = getMediaUris(intent)
-                    if (initial) initialMedia = value
-                    latestMedia = value
-                    eventSinkMedia?.success(latestMedia?.toString())
-                }else{
-                    val value = intent.dataString
-                    if (initial) initialText = value
-                    latestText = value
-                    eventSinkText?.success(latestText)
-                }
-            }
-        }
+        val value = getMediaUris(intent)
+        if (initial) initialMedia = value
+        latestMedia = value
+        eventSinkMedia?.success(latestMedia?.toString())
     }
 
     private fun getMediaUris(intent: Intent?): JSONArray? {
@@ -149,52 +122,67 @@ class ReceiveSharingIntentPlugin : FlutterPlugin, ActivityAware, MethodCallHandl
 
         return when (intent.action) {
             Intent.ACTION_SEND -> {
-                val uri = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
-                val path = FileDirectory.getAbsolutePath(applicationContext, uri)
-                if (path != null) {
-                    val type = getMediaType(path)
-                    val thumbnail = getThumbnail(path, type)
-                    val duration = getDuration(path, type)
-                    JSONArray().put(
-                            JSONObject()
-                                    .put("path", path)
-                                    .put("type", type.ordinal)
-                                    .put("thumbnail", thumbnail)
-                                    .put("duration", duration)
-                    )
-                } else null
+                try {
+                    val uri = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
+                    val path = FileDirectory.getAbsolutePath(applicationContext, uri)
+                    if (path != null) {
+                        val type = getMediaType(path)
+                        val thumbnail = getThumbnail(path, type)
+                        val duration = getDuration(path, type)
+                       return JSONArray().put(
+                                JSONObject()
+                                        .put("path", path)
+                                        .put("type", type.ordinal)
+                                        .put("thumbnail", thumbnail)
+                                        .put("duration", duration)
+                        )
+                    }
+                }catch (e:Exception){
+                    e.printStackTrace()
+                }
+                return null
             }
             Intent.ACTION_VIEW -> {
-                val uri = intent.data
-                val path = FileDirectory.getAbsolutePath(applicationContext, uri)
-                if (path != null) {
-                    val type = getMediaType(path)
-                    val thumbnail = getThumbnail(path, type)
-                    val duration = getDuration(path, type)
-                    JSONArray().put(
-                            JSONObject()
-                                    .put("path", path)
-                                    .put("type", type.ordinal)
-                                    .put("thumbnail", thumbnail)
-                                    .put("duration", duration)
-                    )
-                } else null
+                try {
+                    val uri = intent.data
+                    val path = FileDirectory.getAbsolutePath(applicationContext, uri)
+                    if (path != null) {
+                        val type = getMediaType(path)
+                        val thumbnail = getThumbnail(path, type)
+                        val duration = getDuration(path, type)
+                        return JSONArray().put(
+                                JSONObject()
+                                        .put("path", path)
+                                        .put("type", type.ordinal)
+                                        .put("thumbnail", thumbnail)
+                                        .put("duration", duration)
+                        )
+                    }
+                }catch (e:Exception){
+                    e.printStackTrace()
+                }
+                 return null
             }
             Intent.ACTION_SEND_MULTIPLE -> {
-                val uris = intent.getParcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM)
-                val value = uris?.mapNotNull { uri ->
-                    val path = FileDirectory.getAbsolutePath(applicationContext, uri)
-                            ?: return@mapNotNull null
-                    val type = getMediaType(path)
-                    val thumbnail = getThumbnail(path, type)
-                    val duration = getDuration(path, type)
-                    return@mapNotNull JSONObject()
-                            .put("path", path)
-                            .put("type", type.ordinal)
-                            .put("thumbnail", thumbnail)
-                            .put("duration", duration)
-                }?.toList()
-                if (value != null) JSONArray(value) else null
+                try {
+                    val uris = intent.getParcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM)
+                    val value = uris?.mapNotNull { uri ->
+                        val path = FileDirectory.getAbsolutePath(applicationContext, uri)
+                                ?: return@mapNotNull null
+                        val type = getMediaType(path)
+                        val thumbnail = getThumbnail(path, type)
+                        val duration = getDuration(path, type)
+                        return@mapNotNull JSONObject()
+                                .put("path", path)
+                                .put("type", type.ordinal)
+                                .put("thumbnail", thumbnail)
+                                .put("duration", duration)
+                    }?.toList()
+                    if (value != null) JSONArray(value) else null
+                }catch (e:Exception){
+                    e.printStackTrace()
+                }
+                return null
             }
             else -> null
         }
